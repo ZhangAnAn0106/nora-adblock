@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>广告拦截</title>
+<style>
+  :root{
+    color-scheme:light dark;
+    --bg:#f2f2f7; --card:#ffffff; --text:#1d1d1f; --muted:#8e8e93;
+    --line:rgba(0,0,0,.06); --accent:#0d84ff; --accent-soft:#e8f2ff;
+    --green:#00b578; --green-soft:#e5f7ef; --red:#fa5151;
+    --btn:#f5f5f7; --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.05);
+    --radius:22px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#000000; --card:#1c1c1e; --text:#f5f5f7; --muted:#98989d;
+      --line:rgba(255,255,255,.08); --accent-soft:rgba(13,132,255,.18);
+      --green-soft:rgba(48,209,88,.16); --btn:#2c2c2e;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei","MiSans",sans-serif;font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+  header{padding:28px 20px 4px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  header h1{font-size:26px;font-weight:700;margin:0 0 4px;letter-spacing:-.5px}
+  header p{margin:0;color:var(--muted);font-size:13.5px}
+  main{padding:6px 14px 60px;max-width:760px;margin:0 auto}
+  .pill{flex:none;margin-top:6px;font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;background:var(--btn);color:var(--muted)}
+  .pill.on{background:var(--green-soft);color:var(--green)}
+  .sect{font-size:13px;font-weight:600;color:var(--muted);margin:20px 6px 8px;letter-spacing:.5px}
+  .card{background:var(--card);border:0;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin:0 0 4px}
+  .hint{color:var(--muted);font-size:13px;margin:8px 0 0;line-height:1.55}
+  .warn{background:#fdf3e0;color:#7a5200;border-radius:16px;padding:12px 14px;font-size:13.5px;margin:10px 0;display:none}
+  @media (prefers-color-scheme: dark){.warn{background:rgba(255,214,10,.14);color:var(--text)}}
+  .kv{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 12px;font-size:14px}
+  .kv b{font-weight:600;display:block}
+  .kv span{color:var(--muted);font-size:13px}
+  button{appearance:none;border:0;background:var(--btn);color:var(--text);border-radius:14px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:transform .12s ease,opacity .15s ease}
+  button:active{transform:scale(.96)}
+  button.primary{background:var(--accent);color:#fff}
+  button.small{padding:7px 12px;font-size:13px;border-radius:999px}
+  button.allow{background:var(--green-soft);color:var(--green)}
+  .switch{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}
+  .switch:last-child{border-bottom:0}
+  .switch .t b{display:block;font-weight:600}
+  .switch .t span{color:var(--muted);font-size:13px}
+  .switch input{
+    -webkit-appearance:none;appearance:none;flex:none;width:54px;height:36px;margin:0;border-radius:999px;
+    background-color:#d9d9de;background-image:radial-gradient(circle 13px,#fff 12px,transparent 13.5px);
+    background-size:26px 26px;background-position:3px 5px;background-repeat:no-repeat;cursor:pointer;
+    transition:background-color .2s ease,background-position .2s ease;
+  }
+  .switch input:checked{background-color:var(--accent);background-position:25px 5px}
+  .rowline{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .rowline:last-child{border-bottom:0}
+  .rowline .dom{flex:1;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;word-break:break-all}
+  .rowline .cnt{flex:none;color:var(--muted);font-size:13px;background:var(--btn);border-radius:999px;padding:3px 10px}
+  .rowline .time{flex:none;color:var(--muted);font-size:12.5px;min-width:52px;text-align:right}
+  .empty{color:var(--muted);font-size:14px;padding:10px 0}
+  textarea{width:100%;min-height:110px;resize:vertical;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--text);padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.6}
+  .logview{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:10px 12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-all}
+  .logsize{color:var(--muted);font-size:12.5px;font-weight:400}
+  .cardhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+  .cardhead b{font-size:15.5px}
+  #toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);background:rgba(30,30,32,.92);color:#fff;font-size:14px;padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:99}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>广告拦截</h1>
+    <p>自研 NFQUEUE · DNS + HTTPS 域名双层过滤 · 与 BoxProxy 共存</p>
+  </div>
+  <div class="pill" id="runPill">读取中</div>
+</header>
+<main>
+  <div class="warn" id="envWarn">不在 KernelSU WebUI 里打开（没有 ksu 桥），只能看界面，按钮不可用。请在 KernelSU 管理器里打开本模块的 WebUI。</div>
+
+  <div class="sect">状态</div>
+  <div class="card">
+    <div class="kv">
+      <div><span>运行状态</span><b id="stRunning">—</b></div>
+      <div><span>今日拦截</span><b id="stToday">—</b></div>
+      <div><span>内置拦截规则</span><b id="stRules">—</b></div>
+      <div><span>保险白名单</span><b id="stWhite">—</b></div>
+      <div><span>我的名单</span><b id="stUser">—</b></div>
+      <div><span>BoxProxy 豁免</span><b id="stProxy">—</b></div>
+    </div>
+    <p class="hint" id="proxyHint">检测到 BoxProxy 时自动豁免其流量；未安装则不启用代理豁免。</p>
+  </div>
+
+  <div class="sect">开关</div>
+  <div class="card">
+    <label class="switch"><div class="t"><b>总开关</b><span>关闭后守护进程停止，规则链清除</span></div><input type="checkbox" id="swEnabled"></label>
+    <label class="switch"><div class="t"><b>DNS 拦截</b><span>按域名拦截 DNS 查询（53 端口）</span></div><input type="checkbox" id="swDns"></label>
+    <label class="switch"><div class="t"><b>SNI 拦截</b><span>按域名拦截 HTTPS / HTTP 连接（443 / 8443 / 80）</span></div><input type="checkbox" id="swSni"></label>
+  </div>
+
+  <div class="sect">最近拦截</div>
+  <div class="card">
+    <div class="cardhead"><b>被拦域名</b><button class="small" id="btnRecent">刷新</button></div>
+    <div id="recentList"><div class="empty">读取中…</div></div>
+    <p class="hint">发现误杀，点域名旁的「放行」即可加入我的放行名单，立即生效。</p>
+  </div>
+
+  <div class="sect">我的名单</div>
+  <div class="card">
+    <div class="cardhead"><b>放行名单</b><button class="small primary" id="btnSaveWhite">保存</button></div>
+    <textarea id="taWhite" placeholder="一行一个域名，如 example.com（放行其全部子域）" spellcheck="false"></textarea>
+    <p class="hint">优先级最高：放行名单 &gt; 保险白名单 &gt; 我的拦截名单 &gt; 内置规则。</p>
+  </div>
+  <div class="card">
+    <div class="cardhead"><b>拦截名单</b><button class="small primary" id="btnSaveBlock">保存</button></div>
+    <textarea id="taBlock" placeholder="一行一个域名，如 ads.example.com（拦截其全部子域）" spellcheck="false"></textarea>
+    <p class="hint">保存后守护进程自动热重载，秒生效，不用重启。模块升级不会覆盖这两个名单。</p>
+  </div>
+
+  <div class="sect">运行日志</div>
+  <div class="card">
+    <label class="switch"><div class="t"><b>运行日志</b><span>记录启动、名单加载与异常；关闭不影响拦截与计数</span></div><input type="checkbox" id="swLog"></label>
+    <div class="cardhead" style="margin-top:12px"><b>最近日志</b><span class="logsize" id="logSize"></span><button class="small" id="btnLog">刷新</button></div>
+    <div class="logview" id="logView">读取中…</div>
+    <p class="hint">日志文件单个上限 512 KB，超出自动轮转、只留一个备份，不会越长越大。</p>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  // ---------- ksu 桥（移植调度面板的探测桥） ----------
+  // KernelSU 的 WebView 桥注入可能晚于页面首跑脚本：先轮询等桥出现，
+  // 再用一条无副作用的只读命令实测 exec 形态并缓存；绝不凭首跑瞬间
+  // 查不到 window.ksu 就判死。宿主形态只在启动时探测一次（probeHost），
+  // 已知形态直接调；未知形态时只读命令 2500ms 后用两参数形态补发一次，
+  // 写命令绝不重发（第一次调用没取消，重发等于把写命令跑两遍）。
+  var FALLBACK_DIR = "/data/adb/modules/nora_adblock";
+  var modDir = FALLBACK_DIR;
+  var hostForm = null; // null=未知、3=三参数 exec(cmd,"{}",cb)、2=两参数 exec(cmd,cb)
+
+  function bridgePresent(){
+    return typeof window.ksu !== "undefined" && !!window.ksu && typeof window.ksu.exec === "function";
+  }
+  function hasBridge(){ return hostForm !== null || bridgePresent(); }
+
+  function discoverDir(){
+    try {
+      if (typeof moduleInfo === "function") {
+        var m = moduleInfo();
+        if (m) {
+          if (typeof m === "string" && /^\/data\/adb\/modules\/[A-Za-z0-9_.\-]+$/.test(m)) return m;
+          var d = m.moduleDir || m.modulePath || m.dir || m.path;
+          if (typeof d === "string" && /^\/data\/adb\/modules\/[A-Za-z0-9_.\-]+$/.test(d)) return d;
+        }
+      }
+    } catch(e){}
+    try {
+      if (window.ksu && typeof window.ksu.moduleInfo === "function") {
+        var m2 = window.ksu.moduleInfo();
+        if (m2) {
+          if (typeof m2 === "string" && /^\/data\/adb\/modules\/[A-Za-z0-9_.\-]+$/.test(m2)) return m2;
+          var d2 = m2.moduleDir || m2.modulePath || m2.dir;
+          if (typeof d2 === "string" && /^\/data\/adb\/modules\/[A-Za-z0-9_.\-]+$/.test(d2)) return d2;
+        }
+      }
+    } catch(e){}
+    var mm = String(window.location.href).match(/\/data\/adb\/modules\/([A-Za-z0-9_.\-]+)\/webroot\//);
+    if (mm) return "/data/adb/modules/" + mm[1];
+    var p = window.location.pathname || "";
+    p = p.replace(/\/webroot\/.*$/, "");
+    if (/^\/data\/adb\/modules\/[A-Za-z0-9_.\-]+$/.test(p)) return p;
+    return FALLBACK_DIR;
+  }
+
+  // 等桥出现：立即查一次，之后间隔递增轮询，总计约 3 秒。
+  function waitForBridge(){
+    var delays = [150, 300, 500, 800, 1250];
+    return new Promise(function(resolve){
+      var i = 0;
+      (function check(){
+        if (bridgePresent()) { resolve(true); return; }
+        if (i >= delays.length) { resolve(false); return; }
+        setTimeout(check, delays[i++]);
+      })();
+    });
+  }
+
+  function execCmd(cmd, opts){
+    opts = opts || {};
+    var readOnly = !!opts.readOnly;
+    var timeoutMs = opts.timeoutMs || 15000;
+    return new Promise(function(resolve){
+      if (!bridgePresent()) {
+        resolve({errno:127, stdout:"", stderr:"no ksu bridge"});
+        return;
+      }
+      var done = false;
+      var fallbackTimer = null;
+      var triedFallback = false;
+      var cbName = "__adblock_cb_" + Date.now() + "_" + Math.floor(Math.random()*1000000);
+      var finish = function(r){
+        if (done) return; done = true;
+        if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+        try { delete window[cbName]; } catch(e){}
+        resolve({errno: Number(r && r.errno) || 0, stdout: String((r && r.stdout) || ""), stderr: String((r && r.stderr) || "")});
+      };
+      window[cbName] = function(a, b, c){
+        // 没补发过就回包，说明最初那次三参数调用有效。
+        if (hostForm === null && !triedFallback) hostForm = 3;
+        if (typeof a === "number") finish({errno:a, stdout:b || "", stderr:c || ""});
+        else if (typeof a === "string") finish({errno:0, stdout:a, stderr:b || ""});
+        else if (a && typeof a === "object") finish({errno: Number(a.errno) || 0, stdout: a.stdout || "", stderr: a.stderr || ""});
+        else finish({errno:0, stdout:"", stderr:""});
+      };
+      var callForm = function(form){
+        if (form === 2) return window.ksu.exec(cmd, cbName);
+        return window.ksu.exec(cmd, "{}", cbName);
+      };
+      var callExec = function(useFallback){
+        var form = useFallback ? 2 : (hostForm || 3);
+        try {
+          return callForm(form);
+        } catch(e){
+          if (!useFallback && hostForm === null) {
+            try { var r2 = callForm(2); hostForm = 2; return r2; } catch(_){}
+          }
+          throw e;
+        }
+      };
+      var ret;
+      try { ret = callExec(false); } catch(e){
+        try { delete window[cbName]; } catch(_){}
+        finish({errno:1, stdout:"", stderr: String(e && e.message || e)});
+        return;
+      }
+      // 有些宿主只认两参数回调形态：没回包就用两参数形态补发一次。
+      // 但只读命令才允许补发；写命令绝不重发。形态已知时也不补发。
+      if (readOnly && hostForm === null) {
+        fallbackTimer = setTimeout(function(){
+          if (!done && !triedFallback) {
+            triedFallback = true;
+            try { callExec(true); } catch(e){}
+          }
+        }, 2500);
+      }
+      if (ret && typeof ret.then === "function") {
+        if (hostForm === null) hostForm = 3;
+        ret.then(function(v){
+          if (typeof v === "string") finish({errno:0, stdout:v, stderr:""});
+          else if (v && typeof v === "object") finish({errno: Number(v.errno) || 0, stdout: v.stdout || "", stderr: v.stderr || ""});
+        }, function(e){ finish({errno:1, stdout:"", stderr: String(e && e.message || e)}); });
+      } else if (typeof ret === "string") {
+        if (hostForm === null) hostForm = 3;
+        finish({errno:0, stdout:ret, stderr:""});
+      } else if (ret && typeof ret === "object" && ("stdout" in ret || "errno" in ret)) {
+        if (hostForm === null) hostForm = 3;
+        finish({errno: Number(ret.errno) || 0, stdout: ret.stdout || "", stderr: ret.stderr || ""});
+      }
+      setTimeout(function(){
+        if (!done) finish({errno:124, stdout:"", stderr:"exec timeout"});
+      }, timeoutMs);
+    });
+  }
+
+  // 启动时用 status（只读、无副作用、回包快）实测一次宿主形态并缓存。
+  // 探测不出形态也不阻塞启动，execCmd 的返回形态分支会兜底。
+  function probeHost(){
+    if (hostForm !== null) return Promise.resolve(true);
+    if (!hasBridge()) return Promise.resolve(false);
+    return new Promise(function(resolve){
+      var cmd = "sh '" + modDir + "/adblock.sh' status";
+      var done = false;
+      var t2 = null, tEnd = null;
+      var cb3 = "__adblock_probe3_" + Date.now() + "_" + Math.floor(Math.random()*1000000);
+      var cb2 = "__adblock_probe2_" + Date.now() + "_" + Math.floor(Math.random()*1000000);
+      var finishProbe = function(form){
+        if (done) return; done = true;
+        if (t2) clearTimeout(t2);
+        if (tEnd) clearTimeout(tEnd);
+        try { delete window[cb3]; } catch(e){}
+        try { delete window[cb2]; } catch(e){}
+        if (form) hostForm = form;
+        resolve(!!form);
+      };
+      window[cb3] = function(){ finishProbe(3); };
+      window[cb2] = function(){ finishProbe(2); };
+      var tryForm2 = function(){
+        if (done) return;
+        var ret2;
+        try { ret2 = window.ksu.exec(cmd, cb2); } catch(e){ finishProbe(null); return; }
+        if (ret2 && typeof ret2.then === "function") { finishProbe(2); return; }
+        if (typeof ret2 === "string" || (ret2 && typeof ret2 === "object" && ("stdout" in ret2 || "errno" in ret2))) { finishProbe(2); return; }
+        tEnd = setTimeout(function(){ finishProbe(null); }, 1500);
+      };
+      var ret;
+      try { ret = window.ksu.exec(cmd, "{}", cb3); } catch(e){ tryForm2(); return; }
+      if (ret && typeof ret.then === "function") { finishProbe(null); return; } // Promise 形态宿主：形态无从分辨，留给 execCmd 的 Promise 分支处理
+      if (typeof ret === "string" || (ret && typeof ret === "object" && ("stdout" in ret || "errno" in ret))) { finishProbe(3); return; }
+      t2 = setTimeout(tryForm2, 1500);
+    });
+  }
+
+  var READONLY_RE = /^(status|recent|log|get-userwhite|get-userblock)(\s|$)/;
+  function api(args){ return execCmd("sh '" + modDir + "/adblock.sh' " + args, {readOnly: READONLY_RE.test(args)}); }
+
+  // ---------- 小工具 ----------
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  var toastTimer = null;
+  function toast(msg){
+    try { if (window.ksu && typeof window.ksu.toast === "function") { window.ksu.toast(msg); return; } } catch(e){}
+    var t = $("toast"); t.textContent = msg; t.className = "show";
+    clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.className = ""; }, 2200);
+  }
+  function parseKV(out){
+    var o = {};
+    String(out).split("\n").forEach(function(line){
+      var i = line.indexOf("=");
+      if (i > 0) o[line.slice(0, i).trim()] = line.slice(i + 1).trim();
+    });
+    return o;
+  }
+  function b64encode(str){
+    var bytes = new TextEncoder().encode(str);
+    var bin = "";
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+
+  // ---------- 状态 ----------
+  var loggingState = null; // null=未知、true=开、false=关（loadStatus 刷新）
+  function fmtBytes(n){
+    n = Number(n);
+    if (!isFinite(n) || n < 0) return "";
+    if (n < 1024) return n + " B";
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+    return (n / 1024 / 1024).toFixed(2) + " MB";
+  }
+  function loadStatus(){
+    return api("status").then(function(r){
+      var s = parseKV(r.stdout);
+      var running = s.running === "1";
+      var pill = $("runPill");
+      pill.textContent = running ? "运行中" : (s.enabled === "1" ? "未运行" : "已关闭");
+      pill.className = "pill" + (running ? " on" : "");
+      $("stRunning").textContent = running ? "运行中" : "已停止";
+      $("stToday").textContent = (s.today_total || "0") + " 次 · " + (s.today_unique || "0") + " 个域名";
+      $("stRules").textContent = (s.rules || "0") + " 条";
+      $("stWhite").textContent = (s.whitelist || "0") + " 条";
+      $("stUser").textContent = "拦截 " + (s.user_rules || "0") + " · 放行 " + (s.user_whitelist || "0");
+      var bpPresent = s.boxproxy ? (s.boxproxy === "present") : (s.proxy_found === "1");
+      if (bpPresent) {
+        $("stProxy").textContent = "BoxProxy 已豁免（uid " + (s.proxy_uid || "?") + "）";
+        $("proxyHint").textContent = "已检测到 BoxProxy：代理核心（root）与应用流量均已豁免，透明代理不受影响。";
+      } else {
+        $("stProxy").textContent = "未安装 BoxProxy，代理豁免未启用";
+        $("proxyHint").textContent = "未检测到 BoxProxy，mark 与应用 uid 豁免未下发；日后装上会自动生效，无需重刷模块。";
+      }
+      $("swEnabled").checked = s.enabled === "1";
+      $("swDns").checked = s.dns_filter === "1";
+      $("swSni").checked = s.sni_filter === "1";
+      loggingState = s.logging !== "0";
+      $("swLog").checked = loggingState;
+      var sizes = [];
+      if (s.daemon_log_bytes !== undefined && s.daemon_log_bytes !== "") sizes.push("运行日志 " + fmtBytes(s.daemon_log_bytes));
+      if (s.blocked_log_bytes !== undefined && s.blocked_log_bytes !== "") sizes.push("明细日志 " + fmtBytes(s.blocked_log_bytes));
+      $("logSize").textContent = sizes.join(" · ");
+    });
+  }
+
+  // ---------- 运行日志 ----------
+  function loadLog(){
+    var view = $("logView");
+    if (loggingState === false) {
+      view.textContent = "日志已关闭，拦截照常运行";
+      return Promise.resolve();
+    }
+    return api("log").then(function(r){
+      var txt = String(r.stdout || "").replace(/\s+$/, "");
+      view.textContent = txt ? txt : "（暂无日志）";
+      view.scrollTop = view.scrollHeight;
+    });
+  }
+
+  // ---------- 最近拦截 ----------
+  // 相对时间规则: <60秒「刚刚」; <1小时「N 分钟前」; <6小时「N 小时前」;
+  // 更早(仍是今天)显示 HH:MM; 无时间(旧数据)显示「—」。
+  function fmtRelTime(ts){
+    if (!ts || ts <= 0) return "—";
+    var diff = Math.floor(Date.now() / 1000) - ts;
+    if (diff < 60) return "刚刚";
+    if (diff < 3600) return Math.floor(diff / 60) + " 分钟前";
+    if (diff < 6 * 3600) return Math.floor(diff / 3600) + " 小时前";
+    var d = new Date(ts * 1000);
+    return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+  }
+  function loadRecent(){
+    return api("recent").then(function(r){
+      var box = $("recentList");
+      var lines = String(r.stdout).split("\n").filter(function(l){ return l.trim(); });
+      if (!lines.length) { box.innerHTML = '<div class="empty">暂无拦截记录</div>'; return; }
+      var items = lines.map(function(l){
+        var parts = l.trim().split(/\s+/);
+        return { dom: parts[0], cnt: parseInt(parts[1] || "0", 10) || 0, ts: parseInt(parts[2] || "0", 10) || 0 };
+      });
+      // 按最近拦截时间倒序, 最新的在最上面; 同时间按次数倒序
+      items.sort(function(a, b){ return (b.ts - a.ts) || (b.cnt - a.cnt); });
+      box.innerHTML = items.map(function(it){
+        return '<div class="rowline"><div class="dom">' + esc(it.dom) + '</div>' +
+               '<div class="cnt">' + esc(String(it.cnt)) + ' 次</div>' +
+               '<div class="time">' + esc(fmtRelTime(it.ts)) + '</div>' +
+               '<button class="small allow" data-allow="' + esc(it.dom) + '">放行</button></div>';
+      }).join("");
+      Array.prototype.forEach.call(box.querySelectorAll("[data-allow]"), function(btn){
+        btn.addEventListener("click", function(){
+          var dom = btn.getAttribute("data-allow");
+          btn.disabled = true;
+          api("allow '" + dom.replace(/'/g, "") + "'").then(function(r2){
+            if (String(r2.stdout).indexOf("ok") === 0) {
+              toast("已放行 " + dom);
+              loadRecent(); loadStatus(); loadLists();
+            } else {
+              toast("放行失败"); btn.disabled = false;
+            }
+          });
+        });
+      });
+    });
+  }
+
+  // ---------- 我的名单 ----------
+  function loadLists(){
+    return Promise.all([api("get-userwhite"), api("get-userblock")]).then(function(rs){
+      $("taWhite").value = rs[0].stdout.replace(/\n$/, "");
+      $("taBlock").value = rs[1].stdout.replace(/\n$/, "");
+    });
+  }
+  function saveList(kind){
+    var ta = kind === "white" ? $("taWhite") : $("taBlock");
+    var cmd = kind === "white" ? "save-userwhite" : "save-userblock";
+    return api(cmd + " '" + b64encode(ta.value) + "'").then(function(r){
+      if (String(r.stdout).indexOf("ok") === 0) { toast("已保存，秒生效"); loadStatus(); }
+      else toast("保存失败");
+    });
+  }
+
+  // ---------- 事件 ----------
+  function bindSwitch(id, key){
+    $(id).addEventListener("change", function(ev){
+      var v = ev.target.checked ? "1" : "0";
+      api("set " + key + " " + v).then(function(r){
+        if (String(r.stdout).indexOf("ok") === 0) toast("已保存");
+        else toast("保存失败");
+        setTimeout(loadStatus, 800);
+      });
+    });
+  }
+  bindSwitch("swEnabled", "ENABLED");
+  bindSwitch("swDns", "DNS_FILTER");
+  bindSwitch("swSni", "SNI_FILTER");
+  $("swLog").addEventListener("change", function(ev){
+    var v = ev.target.checked ? "1" : "0";
+    api("set LOGGING " + v).then(function(r){
+      if (String(r.stdout).indexOf("ok") === 0) toast("已保存");
+      else toast("保存失败");
+      // 守护进程最迟 15 秒感知新开关；状态与日志区先按新配置刷新
+      setTimeout(function(){ loadStatus().then(loadLog); }, 800);
+    });
+  });
+  $("btnLog").addEventListener("click", function(){ loadStatus().then(loadLog); });
+  $("btnRecent").addEventListener("click", function(){ loadRecent(); });
+  $("btnSaveWhite").addEventListener("click", function(){ saveList("white"); });
+  $("btnSaveBlock").addEventListener("click", function(){ saveList("block"); });
+
+  // ---------- 启动：等桥 → 定位目录 → 探测形态 → 拉状态 ----------
+  // 探测期间开关先禁用但不显示黄条；只有桥始终没出现（探测彻底失败）
+  // 才显示黄条判死。探测不出 exec 形态不阻塞，execCmd 有兜底分支。
+  function setControlsEnabled(en){
+    ["swEnabled", "swDns", "swSni", "swLog", "btnLog", "btnRecent", "btnSaveWhite", "btnSaveBlock"].forEach(function(id){
+      var el = $(id); if (el) el.disabled = !en;
+    });
+  }
+  setControlsEnabled(false);
+  modDir = discoverDir();
+  waitForBridge().then(function(ok){
+    if (!ok) {
+      $("envWarn").style.display = "block";
+      return;
+    }
+    modDir = discoverDir(); // 桥到位后 moduleInfo 才可用，再定位一次
+    probeHost().then(function(){
+      setControlsEnabled(true);
+      loadStatus().then(loadLog); loadRecent(); loadLists();
+    });
+  });
+})();
+</script>
+</body>
+</html>

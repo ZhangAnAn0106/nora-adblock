@@ -1,0 +1,14 @@
+#!/sbin/sh
+# Magisk 安装入口（标准模板）；KernelSU/APatch 不走这里。
+umask 022
+ui_print() { echo "$1"; }
+OUTFD=$2
+ZIPFILE=$3
+mount /data 2>/dev/null
+if [ -f /data/adb/magisk/util_functions.sh ]; then
+  . /data/adb/magisk/util_functions.sh
+  install_module
+  exit 0
+fi
+ui_print "未找到 Magisk 工具函数，请用 KernelSU / APatch / Magisk 安装"
+exit 1

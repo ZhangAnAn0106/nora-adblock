@@ -1,0 +1,26 @@
+# 保险白名单 (白名单优先于拦截名单, 后缀匹配: 写 example.com 即放行其全部子域)
+# 预置易误伤的关键域名: 通信/支付/系统服务/游戏登录对局。误杀时把域名加到这里即可。
+#
+# 微信 / QQ 通信与支付
+wechat.com
+weixin.qq.com
+tenpay.com
+qpay.qq.com
+# 支付宝
+alipay.com
+alipayobjects.com
+# 一加 / OPPO 系统服务
+oneplus.com
+oppo.com
+coloros.com
+heytap.com
+# 系统更新与时间同步
+time.android.com
+time.google.com
+pool.ntp.org
+ntp.org
+# 和平精英登录与对局关键域 (仅登录/对局, 不含腾讯广告域)
+tmgp.qq.com
+pubgmhd.com
+igamecj.com
+game.qq.com

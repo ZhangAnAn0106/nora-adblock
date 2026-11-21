@@ -1,0 +1,11 @@
+# 广告拦截模块配置 (WebUI 开关会改这里)
+ENABLED=1
+DNS_FILTER=1
+SNI_FILTER=1
+# 运行日志开关: 1=写 daemon.log 与 blocked.log 明细; 拦截计数(blocked_stats)不受此开关影响
+LOGGING=1
+# BoxProxy 豁免: 核心以 root 运行(uid 0); 应用 uid 由包名运行时解析
+PROXY_UIDS=0
+PROXY_PACKAGES=com.boxproxy.box
+# 代理核心的流量标记（BoxProxy 共存豁免用）: 16777216, 33554432, 50331648
+PROXY_MARKS=16777216,33554432,50331648
