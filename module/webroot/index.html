@@ -4,67 +4,158 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>广告拦截</title>
+<link rel="stylesheet" type="text/css" href="/internal/colors.css" />
 <style>
+  /* 与 KernelSU 管理器对齐的 Miuix 令牌 (compose-miuix-ui/miuix 库
+     Colors.kt 的 lightColorScheme / darkColorScheme 默认值):
+       浅色 primary #3482FF / surface #F7F7F7 / surfaceContainer #FFFFFF /
+       onSurfaceVariantSummary 黑60% / dividerLine #E0E0E0 / secondary #E6E6E6 /
+       secondaryContainer #F0F0F0 / tertiaryContainer #EAF2FF / error #E94634
+       深色 primary #277AF7 / surface #000000 / surfaceContainer #242424 /
+       onSurface #F2F2F2 / summary 白50% / dividerLine #393939 /
+       secondaryContainer #434343 / tertiaryContainer #2B3B54 / error #F12522
+     若在 KSU 管理器里打开, 管理器会经 /internal/colors.css 下发它当前
+     主题的同名变量 (含 Monet 动态色), 下面的 var(--surface, …) 等会
+     优先用管理器给的值; 拿不到时回退到这里的 Miuix 默认令牌。 */
   :root{
     color-scheme:light dark;
-    --bg:#f2f2f7; --card:#ffffff; --text:#1d1d1f; --muted:#8e8e93;
-    --line:rgba(0,0,0,.06); --accent:#0d84ff; --accent-soft:#e8f2ff;
-    --green:#00b578; --green-soft:#e5f7ef; --red:#fa5151;
-    --btn:#f5f5f7; --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.05);
-    --radius:22px;
+    --bg0:#f7f7f7; --card0:#ffffff; --text0:#000000; --muted0:rgba(0,0,0,.6);
+    --accent0:#3482ff; --accent-soft0:#eaf2ff; --line0:#e0e0e0;
+    --btn0:#f0f0f0; --tile0:#f0f0f0; --track0:#e6e6e6; --red0:#e94634;
+    --green:#0bbf6e; --green-soft:rgba(11,191,110,.12); --red-soft:rgba(233,70,52,.10);
+    --glass-bg:rgba(255,255,255,.75); --glass-border:rgba(0,0,0,.06); --glass-hi:rgba(255,255,255,.65);
+    --glass-lo:rgba(255,255,255,.28); --glass-tint-r:rgba(255,255,255,.20);
+    --radius:20px;
   }
   @media (prefers-color-scheme: dark){
     :root{
-      --bg:#000000; --card:#1c1c1e; --text:#f5f5f7; --muted:#98989d;
-      --line:rgba(255,255,255,.08); --accent-soft:rgba(13,132,255,.18);
-      --green-soft:rgba(48,209,88,.16); --btn:#2c2c2e;
-      --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.35);
+      --bg0:#000000; --card0:#242424; --text0:#f2f2f2; --muted0:rgba(255,255,255,.5);
+      --accent0:#277af7; --accent-soft0:#2b3b54; --line0:#393939;
+      --btn0:#434343; --tile0:rgba(255,255,255,.06); --track0:#434343; --red0:#f12522;
+      --green:#2fbf71; --green-soft:rgba(47,191,113,.16); --red-soft:rgba(241,37,34,.14);
+      --glass-bg:rgba(36,36,36,.72); --glass-border:rgba(255,255,255,.10); --glass-hi:rgba(255,255,255,.12);
+      --glass-lo:rgba(255,255,255,.05); --glass-tint-r:rgba(36,36,36,.30);
     }
+  }
+  :root{
+    --bg:var(--surface, var(--bg0));
+    --card:var(--surfaceContainer, var(--card0));
+    --text:var(--onSurface, var(--text0));
+    --muted:var(--onSurfaceVariant, var(--muted0));
+    --accent:var(--primary, var(--accent0));
+    --accent-soft:var(--tertiaryContainer, var(--accent-soft0));
+    --line:var(--outlineVariant, var(--line0));
+    --btn:var(--secondaryContainer, var(--btn0));
+    --tile:var(--secondaryContainer, var(--tile0));
+    --red:var(--error, var(--red0));
+    --track:var(--secondary, var(--track0));
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei","MiSans",sans-serif;font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
-  header{padding:28px 20px 4px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-  header h1{font-size:26px;font-weight:700;margin:0 0 4px;letter-spacing:-.5px}
+  header{padding:30px 22px 4px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;max-width:760px;margin:0 auto}
+  header h1{font-size:28px;font-weight:700;margin:0 0 4px;letter-spacing:-.3px}
   header p{margin:0;color:var(--muted);font-size:13.5px}
-  main{padding:6px 14px 60px;max-width:760px;margin:0 auto}
-  .pill{flex:none;margin-top:6px;font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;background:var(--btn);color:var(--muted)}
+  main{padding:6px 14px 150px;max-width:760px;margin:0 auto}
+  .pill{flex:none;margin-top:8px;font-size:13px;font-weight:600;padding:6px 13px;border-radius:999px;background:var(--btn);color:var(--muted)}
   .pill.on{background:var(--green-soft);color:var(--green)}
-  .sect{font-size:13px;font-weight:600;color:var(--muted);margin:20px 6px 8px;letter-spacing:.5px}
-  .card{background:var(--card);border:0;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin:0 0 4px}
-  .hint{color:var(--muted);font-size:13px;margin:8px 0 0;line-height:1.55}
-  .warn{background:#fdf3e0;color:#7a5200;border-radius:16px;padding:12px 14px;font-size:13.5px;margin:10px 0;display:none}
+  .sect{font-size:13.5px;font-weight:500;color:var(--muted);margin:26px 10px 9px}
+  .card{background:var(--card);border-radius:var(--radius);padding:8px 18px 14px;margin:0 0 6px}
+  .hint{color:var(--muted);font-size:13px;margin:8px 0 4px;line-height:1.55}
+  .warn{background:#fdf3e0;color:#7a5200;border-radius:14px;padding:12px 14px;font-size:13.5px;margin:10px 0;display:none}
   @media (prefers-color-scheme: dark){.warn{background:rgba(255,214,10,.14);color:var(--text)}}
-  .kv{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 12px;font-size:14px}
-  .kv b{font-weight:600;display:block}
-  .kv span{color:var(--muted);font-size:13px}
-  button{appearance:none;border:0;background:var(--btn);color:var(--text);border-radius:14px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:transform .12s ease,opacity .15s ease}
-  button:active{transform:scale(.96)}
+  .kv{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;font-size:14px;padding-top:10px}
+  .kv>div{background:var(--tile);border-radius:14px;padding:11px 13px}
+  .kv b{font-weight:650;display:block;font-size:15px;margin-top:1px}
+  .kv span{color:var(--muted);font-size:12.5px}
+  button{appearance:none;border:0;background:var(--btn);color:var(--text);border-radius:16px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;transition:transform .12s ease,background-color .15s ease,opacity .15s ease}
+  button:active{transform:scale(.95)}
+  button:disabled{opacity:.45;cursor:default}
   button.primary{background:var(--accent);color:#fff}
-  button.small{padding:7px 12px;font-size:13px;border-radius:999px}
+  button.small{padding:7px 14px;font-size:13px;border-radius:999px}
   button.allow{background:var(--green-soft);color:var(--green)}
+  button.danger{background:var(--red-soft);color:var(--red)}
   .switch{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}
   .switch:last-child{border-bottom:0}
-  .switch .t b{display:block;font-weight:600}
+  .switch .t b{display:block;font-weight:600;font-size:16px}
   .switch .t span{color:var(--muted);font-size:13px}
+  /* Miuix Switch: 轨道 49x28, 拇指 20 圆, 关态轨道 secondary, 开态 primary */
   .switch input{
-    -webkit-appearance:none;appearance:none;flex:none;width:54px;height:36px;margin:0;border-radius:999px;
-    background-color:#d9d9de;background-image:radial-gradient(circle 13px,#fff 12px,transparent 13.5px);
-    background-size:26px 26px;background-position:3px 5px;background-repeat:no-repeat;cursor:pointer;
+    -webkit-appearance:none;appearance:none;flex:none;width:49px;height:28px;margin:0;border-radius:999px;
+    background-color:var(--track);background-image:radial-gradient(circle 10px,#fff 9.5px,transparent 10.5px);
+    background-size:20px 20px;background-position:4px 4px;background-repeat:no-repeat;cursor:pointer;
     transition:background-color .2s ease,background-position .2s ease;
   }
-  .switch input:checked{background-color:var(--accent);background-position:25px 5px}
-  .rowline{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .switch input:checked{background-color:var(--accent);background-position:25px 4px}
+  .switch input:disabled{opacity:.45;cursor:default}
+  .rowline{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
   .rowline:last-child{border-bottom:0}
   .rowline .dom{flex:1;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;word-break:break-all}
-  .rowline .cnt{flex:none;color:var(--muted);font-size:13px;background:var(--btn);border-radius:999px;padding:3px 10px}
+  .rowline .cnt{flex:none;color:var(--accent);font-size:12.5px;font-weight:600;background:var(--accent-soft);border-radius:999px;padding:3px 10px}
   .rowline .time{flex:none;color:var(--muted);font-size:12.5px;min-width:52px;text-align:right}
+  .rowline .st{flex:none;font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px}
+  .rowline .st.ok{background:var(--green-soft);color:var(--green)}
+  .rowline .st.fail{background:var(--red-soft);color:var(--red)}
   .empty{color:var(--muted);font-size:14px;padding:10px 0}
-  textarea{width:100%;min-height:110px;resize:vertical;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--text);padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.6}
-  .logview{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:10px 12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-all}
+  .listmeta{color:var(--muted);font-size:12.5px;padding:4px 0 2px}
+  .morebtn{width:100%;margin-top:10px}
+  textarea{width:100%;min-height:110px;resize:vertical;border:1px solid var(--line);border-radius:14px;background:var(--tile);color:var(--text);padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.6;outline:none;transition:border-color .15s ease,box-shadow .15s ease}
+  textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .logview{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--tile);padding:10px 12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-all}
   .logsize{color:var(--muted);font-size:12.5px;font-weight:400}
-  .cardhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-  .cardhead b{font-size:15.5px}
-  #toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);background:rgba(30,30,32,.92);color:#fff;font-size:14px;padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:99}
+  .cardhead{display:flex;align-items:center;justify-content:space-between;margin:10px 0 4px}
+  .cardhead b{font-size:15.5px;font-weight:650}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  /* 悬浮液态玻璃底栏 (三层):
+     1) 折射层 (仅 Chromium, JS 特性检测后加 .lg-on): canvas 按底栏实际
+        尺寸生成的圆角矩形 SDF 位移图 → 内联 SVG feDisplacementMap,
+        backdrop-filter: url(#lg-dock-filter) 串联轻 blur + saturate,
+        边缘把背景内容向内折 (凹透镜感), 中心位移为 0、文字保持清晰;
+     2) 光学层: 顶部 inset 高光 + 底部弱反光 + 1px 半透描边 + 柔和投影,
+        折射开启时再叠一圈极淡色散边 (conic 彩虹环 mask 到边框);
+     3) 回退层: 非 Chromium / 滤镜不可用时就是原来的磨砂玻璃
+        (半透明 + blur(20px) saturate(1.6)); 连 backdrop-filter 都不
+        支持时用近不透明同色面; prefers-reduced-transparency 时实色面。
+        任何路径下底栏都不会空白或不可读。 */
+  .dock{
+    position:fixed;left:50%;transform:translateX(-50%);z-index:98;
+    bottom:calc(14px + env(safe-area-inset-bottom, 0px));
+    width:min(720px,calc(100% - 28px));
+    display:flex;align-items:center;justify-content:space-between;gap:6px;
+    padding:10px 16px;border-radius:999px;
+    background:var(--card);
+    border:1px solid var(--glass-border);
+    box-shadow:0 12px 32px rgba(0,0,0,.14),inset 0 1px 0 var(--glass-hi),inset 0 -1px 0 var(--glass-lo);
+  }
+  @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .dock{
+      background:var(--glass-bg);
+      -webkit-backdrop-filter:blur(20px) saturate(1.6);
+      backdrop-filter:blur(20px) saturate(1.6);
+    }
+    /* 折射开启: 底色改薄 (让折射透出来), backdrop 换成 SVG 位移滤镜链 */
+    .dock.lg-on{
+      background:var(--glass-tint-r);
+      -webkit-backdrop-filter:blur(2.5px) saturate(1.7);
+      backdrop-filter:url(#lg-dock-filter) blur(2.5px) saturate(1.7);
+    }
+  }
+  /* 极淡色散边: 只在折射开启时叠, 透明度 .22、screen 混合, 克制 */
+  .dock.lg-on::before{
+    content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;
+    background:conic-gradient(from 210deg,rgba(255,80,160,.55),rgba(255,200,60,.55),rgba(60,255,200,.55),rgba(60,140,255,.55),rgba(255,80,160,.55));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    mask-composite:exclude;
+    opacity:.22;mix-blend-mode:screen;pointer-events:none;
+  }
+  @media (prefers-reduced-transparency: reduce){
+    .dock,.dock.lg-on{background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none}
+  }
+  .dock-tab{position:relative;z-index:1;flex:1;background:transparent;color:var(--muted);border-radius:999px;padding:10px 0;font-size:15px;font-weight:600;transition:transform .15s ease,background-color .2s ease}
+  .dock-tab.on{background:var(--accent);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -1px 0 rgba(0,0,0,.06)}
+  .dock-tab:active{transform:scale(.95)}
+  [hidden]{display:none !important}
+  #toast{position:fixed;left:50%;bottom:104px;transform:translateX(-50%) translateY(20px);background:rgba(30,30,32,.92);color:#fff;font-size:14px;padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:99}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
@@ -79,6 +170,7 @@
 <main>
   <div class="warn" id="envWarn">不在 KernelSU WebUI 里打开（没有 ksu 桥），只能看界面，按钮不可用。请在 KernelSU 管理器里打开本模块的 WebUI。</div>
 
+  <div id="pageControl">
   <div class="sect">状态</div>
   <div class="card">
     <div class="kv">
@@ -88,6 +180,7 @@
       <div><span>保险白名单</span><b id="stWhite">—</b></div>
       <div><span>我的名单</span><b id="stUser">—</b></div>
       <div><span>BoxProxy 豁免</span><b id="stProxy">—</b></div>
+      <div><span>QUIC 拦截</span><b id="stQuic">—</b></div>
     </div>
     <p class="hint" id="proxyHint">检测到 BoxProxy 时自动豁免其流量；未安装则不启用代理豁免。</p>
   </div>
@@ -97,6 +190,7 @@
     <label class="switch"><div class="t"><b>总开关</b><span>关闭后守护进程停止，规则链清除</span></div><input type="checkbox" id="swEnabled"></label>
     <label class="switch"><div class="t"><b>DNS 拦截</b><span>按域名拦截 DNS 查询（53 端口）</span></div><input type="checkbox" id="swDns"></label>
     <label class="switch"><div class="t"><b>SNI 拦截</b><span>按域名拦截 HTTPS / HTTP 连接（443 / 8443 / 80）</span></div><input type="checkbox" id="swSni"></label>
+    <label class="switch"><div class="t"><b>QUIC 拦截</b><span>丢弃 UDP 443，迫使 App 回落 TCP 再按域名拦截</span></div><input type="checkbox" id="swQuic"></label>
   </div>
 
   <div class="sect">最近拦截</div>
@@ -106,6 +200,16 @@
     <p class="hint">发现误杀，点域名旁的「放行」即可加入我的放行名单，立即生效。</p>
   </div>
 
+  </div>
+
+  <div id="pageTools" hidden>
+  <div class="sect">运行日志</div>
+  <div class="card">
+    <label class="switch"><div class="t"><b>运行日志</b><span>记录启动、名单加载与异常；关闭不影响拦截与计数</span></div><input type="checkbox" id="swLog"></label>
+    <div class="cardhead" style="margin-top:12px"><b>最近日志</b><span class="logsize" id="logSize"></span><button class="small" id="btnLog">刷新</button></div>
+    <div class="logview" id="logView">读取中…</div>
+    <p class="hint">日志文件单个上限 512 KB，超出自动轮转、只留一个备份，不会越长越大。</p>
+  </div>
   <div class="sect">我的名单</div>
   <div class="card">
     <div class="cardhead"><b>放行名单</b><button class="small primary" id="btnSaveWhite">保存</button></div>
@@ -118,14 +222,21 @@
     <p class="hint">保存后守护进程自动热重载，秒生效，不用重启。模块升级不会覆盖这两个名单。</p>
   </div>
 
-  <div class="sect">运行日志</div>
-  <div class="card">
-    <label class="switch"><div class="t"><b>运行日志</b><span>记录启动、名单加载与异常；关闭不影响拦截与计数</span></div><input type="checkbox" id="swLog"></label>
-    <div class="cardhead" style="margin-top:12px"><b>最近日志</b><span class="logsize" id="logSize"></span><button class="small" id="btnLog">刷新</button></div>
-    <div class="logview" id="logView">读取中…</div>
-    <p class="hint">日志文件单个上限 512 KB，超出自动轮转、只留一个备份，不会越长越大。</p>
   </div>
 </main>
+<div class="dock" id="dockBar">
+  <button class="dock-tab on" id="tabControl">控制</button>
+  <button class="dock-tab" id="tabTools">工具</button>
+</div>
+<!-- 液态玻璃折射滤镜: feImage 的位移图由 JS 按底栏尺寸在 canvas 上
+     生成后写入 (href/width/height); 滤镜不存在或不可用时 .lg-on 不会被
+     加上, 底栏保持磨砂回退, 不受影响。 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="lg-dock-filter" x="-10%" y="-30%" width="120%" height="160%" color-interpolation-filters="sRGB">
+    <feImage id="lg-dock-map" x="0" y="0" preserveAspectRatio="none" result="map"/>
+    <feDisplacementMap in="SourceGraphic" in2="map" scale="-110" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</defs></svg>
 <div id="toast"></div>
 
 <script>
@@ -362,12 +473,16 @@
       $("swEnabled").checked = s.enabled === "1";
       $("swDns").checked = s.dns_filter === "1";
       $("swSni").checked = s.sni_filter === "1";
+      $("swQuic").checked = s.quic_filter !== "0";
+      $("stQuic").textContent = s.quic_filter !== "0" ? "已开启（UDP 443 丢弃）" : "已关闭";
       loggingState = s.logging !== "0";
       $("swLog").checked = loggingState;
+      if (!loggingState) $("logView").textContent = "日志已关闭，拦截照常运行";
       var sizes = [];
       if (s.daemon_log_bytes !== undefined && s.daemon_log_bytes !== "") sizes.push("运行日志 " + fmtBytes(s.daemon_log_bytes));
       if (s.blocked_log_bytes !== undefined && s.blocked_log_bytes !== "") sizes.push("明细日志 " + fmtBytes(s.blocked_log_bytes));
       $("logSize").textContent = sizes.join(" · ");
+      return s;
     });
   }
 
@@ -379,6 +494,8 @@
       return Promise.resolve();
     }
     return api("log").then(function(r){
+      // 初始化时与 loadStatus 并行触发：若状态先回来且日志是关的，别用旧日志覆盖占位
+      if (loggingState === false) { view.textContent = "日志已关闭，拦截照常运行"; return; }
       var txt = String(r.stdout || "").replace(/\s+$/, "");
       view.textContent = txt ? txt : "（暂无日志）";
       view.scrollTop = view.scrollHeight;
@@ -397,37 +514,62 @@
     var d = new Date(ts * 1000);
     return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
   }
+  // 分批渲染: 数据一次拉回 (loadRecent), 前端每批只渲染 20 条,
+  // 底部「展开更多」逐批追加; 重新拉数据 (刷新/放行后) 回到首批 20 条。
+  var RECENT_STEP = 20;
+  var recentItems = [];
+  var recentShown = RECENT_STEP;
+  function renderRecent(){
+    var box = $("recentList");
+    if (!recentItems.length) { box.innerHTML = '<div class="empty">暂无拦截记录</div>'; return; }
+    var total = recentItems.length;
+    var n = Math.min(recentShown, total);
+    var html = '<div class="listmeta">最近拦截 · 共 ' + total + ' 条</div>';
+    html += recentItems.slice(0, n).map(function(it){
+      return '<div class="rowline"><div class="dom">' + esc(it.dom) + '</div>' +
+             '<div class="cnt">' + esc(String(it.cnt)) + ' 次</div>' +
+             '<div class="time">' + esc(fmtRelTime(it.ts)) + '</div>' +
+             '<button class="small allow" data-allow="' + esc(it.dom) + '">放行</button></div>';
+    }).join("");
+    if (n < total) {
+      html += '<button class="small morebtn" id="btnMoreRecent">展开更多（还剩 ' + (total - n) + ' 条）</button>';
+    } else {
+      html += '<button class="small morebtn" id="btnMoreRecent" disabled>已显示全部 ' + total + ' 条</button>';
+    }
+    box.innerHTML = html;
+    Array.prototype.forEach.call(box.querySelectorAll("[data-allow]"), function(btn){
+      btn.addEventListener("click", function(){
+        var dom = btn.getAttribute("data-allow");
+        btn.disabled = true;
+        api("allow '" + dom.replace(/'/g, "") + "'").then(function(r2){
+          if (String(r2.stdout).indexOf("ok") === 0) {
+            toast("已放行 " + dom);
+            loadRecent(); loadStatus(); loadLists();
+          } else {
+            toast("放行失败"); btn.disabled = false;
+          }
+        });
+      });
+    });
+    var more = $("btnMoreRecent");
+    if (more && n < total) {
+      more.addEventListener("click", function(){
+        recentShown += RECENT_STEP;
+        renderRecent();
+      });
+    }
+  }
   function loadRecent(){
     return api("recent").then(function(r){
-      var box = $("recentList");
       var lines = String(r.stdout).split("\n").filter(function(l){ return l.trim(); });
-      if (!lines.length) { box.innerHTML = '<div class="empty">暂无拦截记录</div>'; return; }
-      var items = lines.map(function(l){
+      recentItems = lines.map(function(l){
         var parts = l.trim().split(/\s+/);
         return { dom: parts[0], cnt: parseInt(parts[1] || "0", 10) || 0, ts: parseInt(parts[2] || "0", 10) || 0 };
       });
       // 按最近拦截时间倒序, 最新的在最上面; 同时间按次数倒序
-      items.sort(function(a, b){ return (b.ts - a.ts) || (b.cnt - a.cnt); });
-      box.innerHTML = items.map(function(it){
-        return '<div class="rowline"><div class="dom">' + esc(it.dom) + '</div>' +
-               '<div class="cnt">' + esc(String(it.cnt)) + ' 次</div>' +
-               '<div class="time">' + esc(fmtRelTime(it.ts)) + '</div>' +
-               '<button class="small allow" data-allow="' + esc(it.dom) + '">放行</button></div>';
-      }).join("");
-      Array.prototype.forEach.call(box.querySelectorAll("[data-allow]"), function(btn){
-        btn.addEventListener("click", function(){
-          var dom = btn.getAttribute("data-allow");
-          btn.disabled = true;
-          api("allow '" + dom.replace(/'/g, "") + "'").then(function(r2){
-            if (String(r2.stdout).indexOf("ok") === 0) {
-              toast("已放行 " + dom);
-              loadRecent(); loadStatus(); loadLists();
-            } else {
-              toast("放行失败"); btn.disabled = false;
-            }
-          });
-        });
-      });
+      recentItems.sort(function(a, b){ return (b.ts - a.ts) || (b.cnt - a.cnt); });
+      recentShown = RECENT_STEP; // 刷新数据后回到默认首批
+      renderRecent();
     });
   }
 
@@ -448,28 +590,163 @@
   }
 
   // ---------- 事件 ----------
-  function bindSwitch(id, key){
+  // hot=true 的开关（DNS/SNI/QUIC）只写配置、守护进程约 2 秒内热生效，
+  // 不重启守护：set 立即返回，拨动不卡，提示里把生效延迟说清楚。
+  // 总开关的统一入口：开关卡片与悬浮底栏的快捷拨钮共用同一条
+  // set ENABLED 命令与回读校验，两处状态由 loadStatus 一起同步。
+  function applyEnabled(v){
+    api("set ENABLED " + v).then(function(r){
+      var ok = String(r.stdout).indexOf("ok") === 0;
+      // 总开关不假报：约 1 秒后回读状态，enabled 与 running 不一致
+      // （关了守护却还在跑 / 开了却没起来）时明确提示，不只说已保存。
+      if (!ok) { toast("保存失败"); setTimeout(loadStatus, 1000); return; }
+      toast("已保存");
+      setTimeout(function(){
+        loadStatus().then(function(s){
+          if (!s) return;
+          if (v === "0" && s.running === "1") toast("守护未停，请再拨一次或重启");
+          else if (v === "1" && s.running !== "1") toast("守护未启动，请再拨一次或重启");
+        });
+      }, 1000);
+    });
+  }
+  function bindSwitch(id, key, hot){
     $(id).addEventListener("change", function(ev){
       var v = ev.target.checked ? "1" : "0";
+      if (key === "ENABLED") { applyEnabled(v); return; }
       api("set " + key + " " + v).then(function(r){
-        if (String(r.stdout).indexOf("ok") === 0) toast("已保存");
+        var ok = String(r.stdout).indexOf("ok") === 0;
+        if (ok) toast(hot ? "已保存，约 2 秒生效" : "已保存");
         else toast("保存失败");
-        setTimeout(loadStatus, 800);
+        setTimeout(loadStatus, hot ? 2500 : 800);
       });
     });
   }
-  bindSwitch("swEnabled", "ENABLED");
-  bindSwitch("swDns", "DNS_FILTER");
-  bindSwitch("swSni", "SNI_FILTER");
+  bindSwitch("swEnabled", "ENABLED", false);
+  bindSwitch("swDns", "DNS_FILTER", true);
+  bindSwitch("swSni", "SNI_FILTER", true);
+  bindSwitch("swQuic", "QUIC_FILTER", true);
   $("swLog").addEventListener("change", function(ev){
     var v = ev.target.checked ? "1" : "0";
+    loggingState = v === "1";
     api("set LOGGING " + v).then(function(r){
-      if (String(r.stdout).indexOf("ok") === 0) toast("已保存");
+      if (String(r.stdout).indexOf("ok") === 0) toast("已保存，约 2 秒生效");
       else toast("保存失败");
-      // 守护进程最迟 15 秒感知新开关；状态与日志区先按新配置刷新
+      // 守护进程约 2 秒的快周期感知新开关；状态与日志区先按新配置刷新
       setTimeout(function(){ loadStatus().then(loadLog); }, 800);
     });
   });
+  // ---------- 底栏液态玻璃（折射层） ----------
+  // 做法对齐 GitHub 上的成熟实现 (samasante/liquid-glass 的 SDF 位移图、
+  // nordify/css-liquid-glass 的 backdrop-filter 内 SVG 滤镜):
+  // 用 canvas 按底栏实际尺寸逐像素算圆角矩形 (胶囊) 的 SDF, 生成位移图
+  // —— R/G 通道编码 SDF 梯度方向 × 幅值 (中心为 0、向边缘按 pow 曲线
+  // ramp), 喂给 #lg-dock-filter 的 feImage + feDisplacementMap
+  // (scale=-110, 负值出凹透镜感; 幅值封顶 0.62, 最大位移约 34px,
+  // 只在边缘一圈折, 中央文字区位移为 0 保持清晰)。
+  // 只有 Chromium 会在 backdrop-filter 里应用 SVG 滤镜: 先做特性
+  // 检测 (UA 含 Chrom(e|ium) + CSS.supports 的 url 形式), 不满足就
+  // 不加 .lg-on, 底栏保持 CSS 里的磨砂回退; JS 任何异常都不能让
+  // 底栏空白 (整段 try 包裹)。位移图只在尺寸变化时防抖重建。
+  var lgDock = $("dockBar");
+  var lgMapEl = $("lg-dock-map");
+  function lgSupported(){
+    try {
+      if (window.matchMedia && window.matchMedia("(prefers-reduced-transparency: reduce)").matches) return false;
+      if (!/Chrom(e|ium)\//.test(navigator.userAgent || "")) return false;
+      if (!(window.CSS && typeof CSS.supports === "function")) return false;
+      return CSS.supports("backdrop-filter", "blur(2px)") &&
+             CSS.supports("backdrop-filter", "url(#lg-dock-filter)");
+    } catch(e){ return false; }
+  }
+  function lgBuildMap(){
+    try {
+      if (!lgDock || !lgMapEl) return;
+      var rect = lgDock.getBoundingClientRect();
+      var w = Math.round(rect.width), h = Math.round(rect.height);
+      if (w < 40 || h < 20) return;
+      var r = h / 2;                    // 胶囊圆角半径 = 半高
+      var cx = w / 2, cy = h / 2;
+      var bx = cx - r, by = cy - r;     // SDF 内矩形半尺寸 (halfSize - radius)
+      function sdf(x, y){
+        var qx = Math.abs(x - cx) - bx, qy = Math.abs(y - cy) - by;
+        var ax = Math.max(qx, 0), ay = Math.max(qy, 0);
+        return Math.sqrt(ax * ax + ay * ay) + Math.min(Math.max(qx, qy), 0) - r;
+      }
+      var cv = document.createElement("canvas");
+      cv.width = w; cv.height = h;
+      var ctx = cv.getContext("2d");
+      var img = ctx.createImageData(w, h);
+      var data = img.data;
+      var rim = Math.max(10, h * 0.5);  // 折射带宽: 半高
+      var e = 1.5;
+      for (var y = 0; y < h; y++) {
+        for (var x = 0; x < w; x++) {
+          var i = (y * w + x) * 4;
+          var depth = -sdf(x + 0.5, y + 0.5); // >0 在玻璃内部
+          if (depth <= 0) {
+            data[i] = 128; data[i + 1] = 128; data[i + 2] = 128; data[i + 3] = 255;
+            continue;
+          }
+          var gx = (sdf(x + 0.5 + e, y + 0.5) - sdf(x + 0.5 - e, y + 0.5)) / (2 * e);
+          var gy = (sdf(x + 0.5, y + 0.5 + e) - sdf(x + 0.5, y + 0.5 - e)) / (2 * e);
+          var gl = Math.sqrt(gx * gx + gy * gy) || 1;
+          var u = Math.min(depth / rim, 1);        // 0=边缘, 1=中心
+          var m = 0.62 * Math.pow(1 - u, 1.7);     // 幅值: 边缘最强, 中心 0
+          data[i]     = Math.max(0, Math.min(255, Math.round(128 + (gx / gl) * m * 127)));
+          data[i + 1] = Math.max(0, Math.min(255, Math.round(128 + (gy / gl) * m * 127)));
+          data[i + 2] = 128;
+          data[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      lgMapEl.setAttribute("href", cv.toDataURL("image/png"));
+      lgMapEl.setAttribute("width", w);
+      lgMapEl.setAttribute("height", h);
+      lgDock.classList.add("lg-on");
+    } catch(e){ /* 滤镜构建失败: 保持磨砂回退, 底栏照常可用 */ }
+  }
+  var lgInited = false, lgTimer = null, lgLastW = 0, lgLastH = 0;
+  function lgInit(){
+    if (lgInited || !lgSupported()) return;
+    lgInited = true;
+    lgBuildMap();
+    var onResize = function(){
+      clearTimeout(lgTimer);
+      lgTimer = setTimeout(lgBuildMap, 150);
+    };
+    if (window.ResizeObserver && lgDock) {
+      new ResizeObserver(function(entries){
+        var rect = entries[0].contentRect;
+        if (Math.abs(rect.width - lgLastW) < 2 && Math.abs(rect.height - lgLastH) < 2) return;
+        lgLastW = rect.width; lgLastH = rect.height;
+        onResize();
+      }).observe(lgDock);
+    } else {
+      window.addEventListener("resize", onResize);
+      window.addEventListener("orientationchange", onResize);
+    }
+  }
+  lgInit();
+
+  // ---------- 分页（悬浮玻璃底栏页签） ----------
+  // 切页只切显示：不刷新、不重拉第一页数据，开关与列表状态保持。
+  // 第二页（日志/名单）首次切入时才懒加载一次。
+  var toolsLoaded = false;
+  function showPage(which){
+    var ctrl = which === "control";
+    $("pageControl").hidden = !ctrl;
+    $("pageTools").hidden = ctrl;
+    $("tabControl").className = "dock-tab" + (ctrl ? " on" : "");
+    $("tabTools").className = "dock-tab" + (!ctrl ? " on" : "");
+    if (!ctrl && !toolsLoaded) {
+      toolsLoaded = true;
+      loadLog(); loadLists();
+    }
+    window.scrollTo(0, 0);
+  }
+  $("tabControl").addEventListener("click", function(){ showPage("control"); });
+  $("tabTools").addEventListener("click", function(){ showPage("tools"); });
   $("btnLog").addEventListener("click", function(){ loadStatus().then(loadLog); });
   $("btnRecent").addEventListener("click", function(){ loadRecent(); });
   $("btnSaveWhite").addEventListener("click", function(){ saveList("white"); });
@@ -479,7 +756,7 @@
   // 探测期间开关先禁用但不显示黄条；只有桥始终没出现（探测彻底失败）
   // 才显示黄条判死。探测不出 exec 形态不阻塞，execCmd 有兜底分支。
   function setControlsEnabled(en){
-    ["swEnabled", "swDns", "swSni", "swLog", "btnLog", "btnRecent", "btnSaveWhite", "btnSaveBlock"].forEach(function(id){
+    ["swEnabled", "swDns", "swSni", "swQuic", "swLog", "btnLog", "btnRecent", "btnSaveWhite", "btnSaveBlock", "tabControl", "tabTools"].forEach(function(id){
       var el = $(id); if (el) el.disabled = !en;
     });
   }
@@ -493,7 +770,9 @@
     modDir = discoverDir(); // 桥到位后 moduleInfo 才可用，再定位一次
     probeHost().then(function(){
       setControlsEnabled(true);
-      loadStatus().then(loadLog); loadRecent(); loadLists();
+      // 第一页数据源并行触发、不串行等一条链：谁先回包谁先渲染
+      // 首屏只拉第一页（控制）的数据；第二页（工具）切入时懒加载
+      loadStatus(); loadRecent();
     });
   });
 })();

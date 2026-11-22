@@ -110359,3 +110359,53 @@ zzybrnbumgxif.space
 a8.zzz-land.com
 zzzmjfixezere.site
 zzzmxvoxooaat.site
+
+# v1.0.5 专项补充: 今日头条/字节广告与酷安常用广告 SDK (来源: 公开规则集 fmz200 blockAds 头条节、穿山甲系列规则; 后缀匹配, 子域自动覆盖)
+track.toutiao.com
+asiad.byteactivity.com
+log.snssdk.com
+mon.toutiaocloud.com
+mon.toutiaocloud.net
+zlink.ugsdk.cn
+ad-sign.byteimg.com
+gromore.com
+pangolin-sdk-toutiao2.com
+pangolin-sdk-toutiao3.com
+pangolin-sdk-toutiao4.com
+pangolin-sdk-toutiao5.com
+pangolin-sdk-toutiao6.com
+pangolin-sdk-toutiao7.com
+pangolin-sdk-toutiao8.com
+ksapisrv.com
+dsp.pinduoduo.com
+ad.baidu.com
+
+# v1.0.9 并入: 秋风规则 AWAvenue (来源: https://github.com/TG-Twilight/AWAvenue-Ads-Rule Filters/AWAvenue-Ads-Rule-Adguard.txt v1.7.9)
+# 拉取日期: 2026-11-22 | 仅收纯域名条目并与 anti-AD 快照去重、安全过滤后实际新增 26 条; 完整秋风名单与现有快照重复 938 条
+# 安全剔除: tnc* 配置域、applog/log/mssdk、snssdk 配置与开放平台子域、p3-tt.byteimg.com 等 14 条内容关键域子域未收 (明细见版本记录)
+a0.app.xiaomi.com
+ad.zijieapi.com
+ads3-normal-hl.zijieapi.com
+ads3-normal-lf.zijieapi.com
+ads3-normal-lq.zijieapi.com
+ads3-normal.zijieapi.com
+ads5-normal-hl.zijieapi.com
+ads5-normal-lf.zijieapi.com
+ads5-normal-lq.zijieapi.com
+ads5-normal.zijieapi.com
+api.statsig.com
+audid-api.taobao.com
+c.evidon.com
+c.gj.qq.com
+kepler.jd.com
+log-upload.mihoyo.com
+metrics.icloud.com
+mobilelog.kugou.com
+orbit.jd.com
+pkoplink.com
+shouji.sogou.com
+snowflake.qq.com
+tagtic.cn
+tracker.ai.xiaomi.com
+update.avlyun.sec.miui.com
+ws-keyboard.shouji.sogou.com

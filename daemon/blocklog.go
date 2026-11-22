@@ -31,14 +31,23 @@ const (
 // on startup, so they survive daemon restarts. blocked.log is only a detail
 // log (one aggregated batch per flush) and is written solely when logging is
 // enabled; the counts never depend on it.
+// statsFlushInterval throttles write-through persistence of blocked_stats:
+// the first record after a flush writes immediately, later records at
+// most once per interval.
+const statsFlushInterval = 2 * time.Second
+
 type blockLog struct {
-	mu       sync.Mutex
-	dir      string
-	day      string
-	counts   map[string]int   // today's cumulative counts (persisted)
-	lastSeen map[string]int64 // domain -> unix time of its most recent block (persisted)
-	total    int
-	pending  map[string]int // counts since last flush, feeds blocked.log
+	mu        sync.Mutex
+	dir       string
+	day       string
+	counts    map[string]int   // today's cumulative counts (persisted)
+	lastSeen  map[string]int64 // domain -> unix time of its most recent block (persisted)
+	total     int
+	pending   map[string]int // counts since last flush, feeds blocked.log
+	lastFlush time.Time      // last flush (zero = never)
+	// last flush's header counts, reused by record-triggered write-through
+	// flushes (the daemon's tick refreshes them with live list counts).
+	lastRules, lastWhite int
 }
 
 func newBlockLog(dir string) *blockLog {
@@ -99,7 +108,6 @@ func (b *blockLog) loadStats() {
 
 func (b *blockLog) record(domain string) {
 	b.mu.Lock()
-	defer b.mu.Unlock()
 	if d := today(); d != b.day {
 		b.day = d
 		b.counts = make(map[string]int)
@@ -114,6 +122,15 @@ func (b *blockLog) record(domain string) {
 	b.lastSeen[domain] = time.Now().Unix()
 	b.pending[domain]++
 	b.total++
+	due := b.lastFlush.IsZero() || time.Since(b.lastFlush) >= statsFlushInterval
+	rules, white := b.lastRules, b.lastWhite
+	b.mu.Unlock()
+	if due {
+		// Write-through: blocked_stats reaches disk within ~2s of a block,
+		// not only on the 15s tick — a daemon restart inside the old window
+		// used to erase the newest 最近拦截 entries with it.
+		b.flush(rules, white)
+	}
 }
 
 // evictMinLocked drops the least-hit domain to make room for a new one.
@@ -181,6 +198,8 @@ func sortedRecent(counts map[string]int, lastSeen map[string]int64) []statEntry 
 // the blocked.log detail log (only when logging is enabled).
 func (b *blockLog) flush(blockRules, whiteRules int) {
 	b.mu.Lock()
+	b.lastRules, b.lastWhite = blockRules, whiteRules
+	b.lastFlush = time.Now()
 	pending := b.pending
 	b.pending = make(map[string]int)
 	day, total := b.day, b.total

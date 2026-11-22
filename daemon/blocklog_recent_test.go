@@ -43,6 +43,22 @@ func TestStatsRoundTripWithTimestamps(t *testing.T) {
 	}
 }
 
+// Write-through (1.0.7): the first block record must reach blocked_stats
+// without an explicit flush() / maintenance tick (records used to live in
+// memory for up to 15s and died with a panel-triggered daemon restart).
+func TestStatsWriteThroughOnFirstRecord(t *testing.T) {
+	dir := t.TempDir()
+	b := newBlockLog(dir)
+	b.record("instant-ads.example.com")
+	raw, err := os.ReadFile(filepath.Join(dir, statsFileName))
+	if err != nil {
+		t.Fatalf("record must write blocked_stats immediately, file missing: %v", err)
+	}
+	if !strings.Contains(string(raw), "instant-ads.example.com 1 ") {
+		t.Errorf("first block must be on disk right away, got:\n%s", string(raw))
+	}
+}
+
 // Legacy stats files (pre-1.0.4, "domain count" with no timestamp) must
 // load with counts intact and lastSeen = 0, never dropping the day's data.
 func TestStatsLegacyFormatCompat(t *testing.T) {

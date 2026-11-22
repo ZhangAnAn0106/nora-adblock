@@ -13,6 +13,7 @@ type Config struct {
 	DNSFilter  bool
 	SNIFilter  bool
 	Logging    bool     // LOGGING: gates daemon.log + blocked.log writes; counts are independent
+	QUICFilter bool     // QUIC_FILTER: drop UDP 443 so QUIC apps fall back to TCP (then DNS/SNI rules apply)
 	ProxyUIDs  []int    // static uids from PROXY_UIDS (0 = root, the proxy core)
 	ProxyPkgs  []string // packages whose uid is resolved at runtime (BoxProxy app)
 	ProxyMarks []uint32 // fwmarks used by the proxy core (coexistence exemptions)
@@ -27,6 +28,7 @@ func DefaultConfig() Config {
 		DNSFilter:  true,
 		SNIFilter:  true,
 		Logging:    true,
+		QUICFilter: true,
 		ProxyUIDs:  []int{0},
 		ProxyPkgs:  []string{"com.boxproxy.box"},
 		ProxyMarks: []uint32{16777216, 33554432, 50331648},
@@ -60,6 +62,8 @@ func loadConfig(path string) Config {
 			cfg.SNIFilter = v == "1"
 		case "LOGGING":
 			cfg.Logging = v == "1"
+		case "QUIC_FILTER":
+			cfg.QUICFilter = v == "1"
 		case "PROXY_UIDS":
 			cfg.ProxyUIDs = parseIntList(v)
 		case "PROXY_PACKAGES":

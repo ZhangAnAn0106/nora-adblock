@@ -10,6 +10,24 @@ const (
 	QueueSNI = 1
 )
 
+// Connmark fast path (v1.0.9): when the SNI handler has decided a TCP
+// flow, its verdict stamps the connection with one of these connmarks
+// (SetVerdictWithConnMark). Later packets of the same connection are
+// then resolved entirely in the kernel by the two connmark rules in
+// setupCommands — allowed flows RETURN before the queue rules, blocked
+// flows DROP — and never round-trip to userspace again. The in-daemon
+// flow table stays as the fallback for packets that were already queued
+// before the mark landed (and for kernels without NFQA_CT support).
+//
+// The values are ours alone: they must never collide with the BoxProxy
+// packet marks (16777216/33554432/50331648 — those are fwmarks matched
+// with "-m mark"; these are connmarks matched with "-m connmark") nor
+// with each other. 0x4E52 = "NR".
+const (
+	ConnMarkAllow uint32 = 0x4E520001
+	ConnMarkBlock uint32 = 0x4E520002
+)
+
 // setupCommands returns the argv sequence (without the iptables binary name,
 // which the caller prepends via bin) that (re)builds ChainName in the mangle
 // table and hooks it at the head of OUTPUT. Exemption rules always precede
@@ -33,6 +51,9 @@ func setupCommands(cfg Config, exemptUIDs []int, boxProxyPresent bool) [][]strin
 	// 2) packets carrying a proxy mark pass
 	if boxProxyPresent {
 		for _, m := range cfg.ProxyMarks {
+			if m == 0 {
+				continue // "--mark 0/0" matches every packet: never emit it
+			}
 			s := strconv.FormatUint(uint64(m), 10)
 			add("-m", "mark", "--mark", s+"/"+s, "-j", "RETURN")
 		}
@@ -45,12 +66,24 @@ func setupCommands(cfg Config, exemptUIDs []int, boxProxyPresent bool) [][]strin
 		}
 		add("-m", "owner", "--uid-owner", strconv.Itoa(uid), "-j", "RETURN")
 	}
-	// 4) DNS filtering
+	// 3b) connmark fast path: connections the daemon already decided
+	// are resolved in the kernel and never enter a queue again. After
+	// every exemption, before QUIC and the queue rules.
+	add("-m", "connmark", "--mark", strconv.FormatUint(uint64(ConnMarkAllow), 10)+"/4294967295", "-j", "RETURN")
+	add("-m", "connmark", "--mark", strconv.FormatUint(uint64(ConnMarkBlock), 10)+"/4294967295", "-j", "DROP")
+	// 4) QUIC fallback: after all exemptions, drop UDP 443 outright.
+	// QUIC carries its hostname inside encrypted Initial packets; instead of
+	// parsing them, dropping the flow makes apps fall back to TCP, where the
+	// DNS/SNI filters below decide by domain name.
+	if cfg.QUICFilter {
+		add("-p", "udp", "--dport", "443", "-j", "DROP")
+	}
+	// 5) DNS filtering
 	if cfg.DNSFilter {
 		add("-p", "udp", "--dport", "53", "-j", "NFQUEUE", "--queue-num", strconv.Itoa(QueueDNS), "--queue-bypass")
 		add("-p", "tcp", "--dport", "53", "-j", "NFQUEUE", "--queue-num", strconv.Itoa(QueueDNS), "--queue-bypass")
 	}
-	// 5) SNI / Host filtering: only the first packets of a TCP flow
+	// 6) SNI / Host filtering: only the first packets of a TCP flow
 	if cfg.SNIFilter {
 		for _, port := range []string{"443", "8443", "80"} {
 			add("-p", "tcp", "--dport", port,

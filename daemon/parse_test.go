@@ -155,3 +155,17 @@ func TestParsePacket(t *testing.T) {
 		t.Fatal("garbage packet parsed")
 	}
 }
+
+// Forged-name regression: wire labels carrying spaces/newlines must be
+// rejected by the parsers, so a crafted packet cannot inject extra
+// lines into the stats files (which use a "domain count time" format).
+func TestParsersRejectForgedNames(t *testing.T) {
+	for _, name := range []string{"ads.exa mple.com", "ads.exa\nmple.com", ".ads.example.com"} {
+		if got, ok := parseDNSQueryName(buildDNSQuery(name)); ok {
+			t.Errorf("forged DNS name %q parsed as %q, want rejection", name, got)
+		}
+	}
+	if !validParsedName("ads.example.com") || !validParsedName("xn--fiqs8s.example") || validParsedName("") || validParsedName("bad name") {
+		t.Error("validParsedName boundary wrong")
+	}
+}

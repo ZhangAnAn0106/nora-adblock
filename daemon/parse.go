@@ -132,7 +132,31 @@ func parseDNSQueryName(msg []byte) (string, bool) {
 	if len(labels) == 0 {
 		return "", false
 	}
-	return strings.ToLower(strings.Join(labels, ".")), true
+	name := strings.ToLower(strings.Join(labels, "."))
+	if !validParsedName(name) {
+		return "", false
+	}
+	return name, true
+}
+
+// validParsedName sanity-checks a name extracted from a packet before it
+// is matched against the lists or written into a stats/log file. Wire
+// labels can carry arbitrary bytes (spaces, even newlines); an unchecked
+// name could forge extra lines in the "domain count time" stats files.
+// Real hostnames (punycode included) are letters/digits/hyphen plus dot
+// and underscore separators, at most 253 chars, with no empty labels.
+func validParsedName(name string) bool {
+	if name == "" || len(name) > 253 {
+		return false
+	}
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		if (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '.' || c == '-' || c == '_' {
+			continue
+		}
+		return false
+	}
+	return !strings.HasPrefix(name, ".") && !strings.HasSuffix(name, ".") && !strings.Contains(name, "..")
 }
 
 // stripTCPFrame removes the RFC 7766 2-byte length prefix of DNS-over-TCP.
@@ -224,7 +248,11 @@ func parseServerNameList(b []byte) (string, bool) {
 			return "", false
 		}
 		if ntype == 0 {
-			return strings.ToLower(string(b[:nlen])), true
+			name := strings.ToLower(string(b[:nlen]))
+			if !validParsedName(name) {
+				return "", false
+			}
+			return name, true
 		}
 		b = b[nlen:]
 	}
@@ -259,7 +287,11 @@ func parseHTTPHost(b []byte) (string, bool) {
 			if host == "" {
 				return "", false
 			}
-			return strings.ToLower(host), true
+			host = strings.ToLower(host)
+			if !validParsedName(host) {
+				return "", false
+			}
+			return host, true
 		}
 		if line == "" {
 			break

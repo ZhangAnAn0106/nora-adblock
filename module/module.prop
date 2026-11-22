@@ -1,6 +1,6 @@
 id=nora_adblock
 name=广告拦截（自研 NFQUEUE）
-version=1.0.4
-versionCode=5
+version=1.0.5
+versionCode=6
 author=桉桉
 description=拦截广告域名：DNS 与 HTTPS 域名双层过滤，与 BoxProxy 透明代理共存。

@@ -24,7 +24,37 @@ if [ -f "$DATA/config" ] && ! grep -q '^LOGGING=' "$DATA/config"; then
   echo "LOGGING=1" >> "$DATA/config"
   ui_print "- 已为已有 config 补上 LOGGING=1"
 fi
-seed blocklist.txt
+# v1.0.5 新增 QUIC_FILTER 键: 已有 config 缺这行时只补一行, 不动其它配置
+if [ -f "$DATA/config" ] && ! grep -q '^QUIC_FILTER=' "$DATA/config"; then
+  echo "QUIC_FILTER=1" >> "$DATA/config"
+  ui_print "- 已为已有 config 补上 QUIC_FILTER=1"
+fi
+# 公开版不生成 capture_stats: 清掉从其它版本刷过来时留下的残留文件,
+# 并从已有 config 里删掉 CAPTURE 一行 (本版守护进程不读这个键)。
+rm -f "$DATA/capture_stats" "$DATA/capture_stats.tmp"
+if [ -f "$DATA/config" ] && grep -q '^CAPTURE=' "$DATA/config"; then
+  grep -v '^CAPTURE=' "$DATA/config" > "$DATA/config.tmpc" && mv "$DATA/config.tmpc" "$DATA/config"
+fi
+# v1.1.1: 云端规则订阅功能下线 (用户明确要求移除, 属例外处理): 清理它在
+# 数据目录的全部残留 (订阅链接、下载成果、按源缓存、状态、请求/勾选标志),
+# 并从已有 config 里删掉 CLOUD_RULES / CLOUD_AUTO 两行; 内置名单、用户名单
+# 与其它配置一律不动。
+rm -f "$DATA/rule_sources.txt" "$DATA/cloud_blocklist.txt" "$DATA/cloud_status.txt" \
+      "$DATA/cloud_request" "$DATA/cloud_selected.txt"
+rm -rf "$DATA/cloud_src"
+if [ -f "$DATA/config" ]; then
+  if grep -v -e '^CLOUD_RULES=' -e '^CLOUD_AUTO=' "$DATA/config" > "$DATA/config.tmp111"; then
+    mv "$DATA/config.tmp111" "$DATA/config"
+    ui_print "- 已清理云端订阅残留 (v1.1.1 移除该功能)"
+  else
+    rm -f "$DATA/config.tmp111"
+  fi
+fi
+# 内置拦截名单是离线快照、靠新版模块更新 (文件头有此说明), 每次安装都
+# 刷新为包内最新版; 用户自己的名单在 user_blocklist.txt, 不受影响。
+# v1.0.9 起改为刷新 (此前只播种, 升级用户拿不到新名单)。
+cp "$MODPATH/data/blocklist.txt" "$DATA/blocklist.txt"
+ui_print "- 已更新内置拦截名单 blocklist.txt"
 seed whitelist.txt
 seed user_blocklist.txt
 seed user_whitelist.txt

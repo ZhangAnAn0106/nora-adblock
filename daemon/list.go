@@ -72,7 +72,7 @@ func loadDomainFile(path string) (*DomainSet, error) {
 	return ds, sc.Err()
 }
 
-// ListManager owns the four list files in the data dir and hot-reloads each
+// ListManager owns the list files in the data dir and hot-reloads each
 // on mtime change. Decision priority (highest first):
 //
 //	user_whitelist.txt > whitelist.txt (built-in safety) >
@@ -100,13 +100,37 @@ func NewListManager(dir string) *ListManager {
 
 func (lm *ListManager) path(name string) string { return filepath.Join(lm.dir, name) }
 
-// ReloadIfChanged re-reads any of the four lists whose file changed.
+var listFiles = []string{"blocklist.txt", "whitelist.txt", "user_blocklist.txt", "user_whitelist.txt"}
+
+func (lm *ListManager) setFor(name string, ds *DomainSet) {
+	switch name {
+	case "blocklist.txt":
+		lm.block = ds
+	case "whitelist.txt":
+		lm.white = ds
+	case "user_blocklist.txt":
+		lm.userBlock = ds
+	case "user_whitelist.txt":
+		lm.userWhite = ds
+	}
+}
+
+// ReloadIfChanged re-reads any list whose file changed. A file that
+// disappeared after being loaded reloads as empty, without touching
+// the other lists.
 func (lm *ListManager) ReloadIfChanged() bool {
 	changed := false
-	for _, name := range []string{"blocklist.txt", "whitelist.txt", "user_blocklist.txt", "user_whitelist.txt"} {
+	for _, name := range listFiles {
 		p := lm.path(name)
 		st, err := os.Stat(p)
 		if err != nil {
+			lm.mu.Lock()
+			if _, seen := lm.mods[name]; seen {
+				lm.setFor(name, NewDomainSet())
+				delete(lm.mods, name)
+				changed = true
+			}
+			lm.mu.Unlock()
 			continue
 		}
 		if st.ModTime().Equal(lm.mods[name]) {
@@ -117,16 +141,7 @@ func (lm *ListManager) ReloadIfChanged() bool {
 			continue
 		}
 		lm.mu.Lock()
-		switch name {
-		case "blocklist.txt":
-			lm.block = ds
-		case "whitelist.txt":
-			lm.white = ds
-		case "user_blocklist.txt":
-			lm.userBlock = ds
-		case "user_whitelist.txt":
-			lm.userWhite = ds
-		}
+		lm.setFor(name, ds)
 		lm.mods[name] = st.ModTime()
 		lm.mu.Unlock()
 		changed = true
@@ -134,7 +149,7 @@ func (lm *ListManager) ReloadIfChanged() bool {
 	return changed
 }
 
-// Blocked applies the four-level priority.
+// Blocked applies the priority ladder.
 func (lm *ListManager) Blocked(name string) bool {
 	lm.mu.RLock()
 	defer lm.mu.RUnlock()
@@ -156,3 +171,4 @@ func (lm *ListManager) Counts() (int, int, int, int) {
 	defer lm.mu.RUnlock()
 	return lm.block.Len(), lm.white.Len(), lm.userBlock.Len(), lm.userWhite.Len()
 }
+
